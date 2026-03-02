@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Guided Virtual Lab: EMF & Internal Resistance</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&family=Sarabun:wght@300;400;700&display=swap');
+
+        :root{
+            --bg:#fff7ee; --panel:#fffaf4; --card:#ffffff; --stroke:#f0ddc9;
+            --text:#2b2a28; --muted:#6b665f; --primary:#f6b73c; --primary2:#f59e0b;
+            --accent:#f59e0b; --blue:#3b82f6; --green:#22c55e; --orange:#fb923c; --red:#ef4444;
+            --good:#22c55e; --warn:#fb923c; --bad:#ef4444;
+            --shadow: 0 10px 26px rgba(43,42,40,.10); --shadow2: 0 6px 16px rgba(43,42,40,.10); --radius: 18px;
+        }
+        *{box-sizing:border-box}
+        body{
+            margin:0; font-family:'Sarabun','Space Grotesk',system-ui,sans-serif; color:var(--text);
+            background: radial-gradient(900px 500px at 18% 0%,#fff1d6 0%,transparent 60%), radial-gradient(900px 520px at 82% 10%,#eaf3ff 0%,transparent 60%), radial-gradient(900px 520px at 50% 95%,#eafff2 0%,transparent 55%), var(--bg);
+            line-height:1.6;
+        }
+        header{ padding:16px 18px; background:linear-gradient(180deg,#fffaf2,#fff3e3); border-bottom:1px solid var(--stroke); }
+        .title{ font-weight:950; font-size:20px; letter-spacing:.2px; color:#2b2a28; }
+        .subtitle{ color:var(--muted); font-size:13px; margin-top:4px }
+        .wrap{ padding:16px; max-width:1200px; margin:0 auto; }
+        .topbar{
+            display:flex; gap:12px; align-items:center; justify-content:space-between; padding:12px;
+            background:rgba(255,250,244,.9); border:1px solid var(--stroke); border-radius:var(--radius);
+            box-shadow:var(--shadow2); backdrop-filter:blur(8px); margin-bottom:14px;
+        }
+        .steps{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+        .stepPill{
+            padding:8px 10px; border-radius:999px; border:1px solid var(--stroke);
+            background:#fff3e3; color:var(--muted); font-size:13px; display:flex; gap:8px; align-items:center; transition:0.25s;
+        }
+        .stepPill.active{
+            border-color:rgba(245,158,11,.55); background:linear-gradient(135deg,#ffd77a,#f6b73c);
+            color:#2b2a28; font-weight:900; box-shadow:0 6px 16px rgba(245,158,11,.35);
+        }
+        .stepPill.done{ border-color:rgba(34,197,94,.45); background:linear-gradient(135deg,#b9f6d2,#22c55e); color:#fff; font-weight:800; }
+        .badge{
+            width:18px; height:18px; border-radius:999px; display:inline-flex; align-items:center; justify-content:center;
+            font-size:12px; font-weight:bold; background:rgba(246,183,60,.22); color:var(--text); border:1px solid rgba(245,158,11,.25);
+        }
+        .stepPill.done .badge{ background:rgba(34,197,94,.16); border-color:rgba(34,197,94,.30); }
+        .actions{ display:flex; gap:10px; align-items:center; }
+        button{
+            border:none; cursor:pointer; color:#2b2a28;
+            background:linear-gradient(180deg,#ffd57a,var(--primary)); border:1px solid rgba(245,158,11,.35);
+            padding:10px 14px; border-radius:14px; font-weight:900; font-size:14px;
+            box-shadow:0 10px 18px rgba(245,158,11,.18); font-family:'Sarabun',sans-serif; transition:0.2s;
+        }
+        button:hover:not(:disabled){ filter:brightness(1.05); transform:translateY(-1px); }
+        button:disabled{ opacity:.45; cursor:not-allowed; box-shadow:none; background:#f1e6d9; border-color:#f1e6d9; color:#918679; transform:none; }
+        .ghost{ background:#fffaf4; color:var(--muted); border:1px solid var(--stroke); box-shadow:none; }
+        .grid{ display:grid; gap:14px; grid-template-columns:360px 1fr; }
+        @media (max-width:980px){ .grid{ grid-template-columns:1fr } }
+        .panel{ background:rgba(255,250,244,.92); border:1px solid var(--stroke); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow); }
+        .panel h3{ margin:0 0 8px 0; font-size:14px; letter-spacing:.2px; color:var(--text); }
+        .hint{ color:var(--muted); font-size:12.5px; line-height:1.45 }
+        .cards{ display:grid; gap:10px; grid-template-columns:1fr 1fr; margin-top:10px; }
+        .card{
+            background:#ffffff; border:1px solid var(--stroke); border-radius:18px; padding:10px;
+            display:flex; flex-direction:column; gap:8px;
+            transition:transform .15s,border-color .15s,box-shadow .15s; box-shadow:0 6px 14px rgba(43,42,40,.08); cursor:pointer;
+        }
+        .card:hover{ transform:translateY(-1px); border-color:rgba(245,158,11,.4); }
+        .card.selected{ border-color:rgba(245,158,11,.55); box-shadow:0 0 0 3px rgba(246,183,60,.18) inset,0 12px 24px rgba(43,42,40,.12); }
+        .cardTitle{ font-size:13px; font-weight:950 }
+        .mini{ color:var(--muted); font-size:12px }
+        .row{ display:flex; gap:10px; align-items:center; justify-content:space-between }
+        .controlGroup{ margin-top:12px; padding-top:12px; border-top:1px solid rgba(240,221,201,.9) }
+        label{ display:block; margin:10px 0 6px; color:var(--muted); font-size:12.5px }
+        input[type=range]{ width:100%; accent-color:var(--primary); }
+        .lab{ display:grid; gap:14px; grid-template-rows:auto auto; }
+        .labTop{ display:grid; gap:14px; grid-template-columns:1.25fr .85fr; }
+        @media (max-width:1100px){ .labTop{ grid-template-columns:1fr } }
+        .readouts{ display:grid; gap:10px; grid-template-columns:1fr 1fr 1fr; }
+        @media (max-width:520px){ .readouts{ grid-template-columns:1fr } }
+        .meter{ background:#ffffff; border:1px solid var(--stroke); border-radius:18px; padding:12px; box-shadow:0 6px 14px rgba(43,42,40,.08); }
+        .meter .k{ color:var(--muted); font-size:12px }
+        .meter .v{ font-size:26px; font-weight:1000; margin-top:4px; font-family:'JetBrains Mono',monospace; color:#0f766e; text-shadow:0 2px 6px rgba(0,0,0,.08); }
+        .meter:nth-child(1) .v{ color:#16a34a; }
+        .meter .u{ color:var(--muted); font-size:12px; margin-left:6px; font-family:inherit; }
+        .equation{ margin-top:10px; padding:10px 12px; border-radius:18px; border:1px solid var(--stroke); background:#fff3e3; color:var(--muted); font-size:13px; }
+        .feedback{ margin-top:12px; padding:12px; border-radius:18px; border:1px solid var(--stroke); background:#ffffff; line-height:1.45; box-shadow:0 6px 14px rgba(43,42,40,.08); }
+        .feedback strong{ color:var(--text) }
+        .status{ margin-top:6px; font-size:12.5px; color:var(--muted) }
+        .status.good{ color:var(--green) }
+        .status.warn{ color:var(--orange) }
+        .status.bad{ color:var(--red) }
+        svg.circuit-svg{ width:100%; height:auto; background:linear-gradient(180deg,#fffaf2,#ffe9c8); border-radius:24px; border:1px solid var(--stroke); box-shadow:0 10px 24px rgba(43,42,40,.10); }
+        canvas{ width:100%; height:280px; background:linear-gradient(180deg,#ffffff,#fffaf4); border-radius:var(--radius); border:1px solid var(--stroke); box-shadow:0 10px 24px rgba(43,42,40,.10); display:block; }
+        .qbox{ margin-top:12px; padding:12px; border-radius:18px; background:#ffffff; border:1px solid var(--stroke); box-shadow:0 6px 14px rgba(43,42,40,.08); }
+        .qbox .q{ font-weight:950; font-size:13px; color:var(--text); }
+        .qbox input{ width:100%; margin-top:10px; padding:10px 12px; border-radius:14px; border:1px solid var(--stroke); background:#fff7ee; color:var(--text); outline:none; font-family:'Sarabun',sans-serif; font-size:14px; }
+        .qbox input:focus{ box-shadow:0 0 0 3px rgba(245,158,11,.14); border-color:rgba(245,158,11,.35); }
+        .qbox .qactions{ display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; }
+        .pill{ display:inline-flex; gap:8px; align-items:center; padding:8px 10px; border-radius:999px; border:1px solid var(--stroke); background:#ffffff; color:var(--muted); font-size:12px; box-shadow:0 6px 14px rgba(43,42,40,.06); }
+        .switch-open{ background:linear-gradient(180deg,#ffd57a,#f59e0b) !important; border-color:rgba(245,158,11,.35) !important; box-shadow:0 8px 18px rgba(245,158,11,.22) !important; color:#2b2a28 !important; }
+        .switch-closed{ background:linear-gradient(180deg,#4ade80,#22c55e) !important; border-color:rgba(34,197,94,.35) !important; box-shadow:0 8px 18px rgba(34,197,94,.22) !important; color:#fff !important; }
+        button.primary{ background:linear-gradient(180deg,#ffd95a,#f59e0b); font-size:15px; transform:scale(1.02); color:#2b2a28; }
+        button.primary:hover:not(:disabled){ filter:brightness(1.06); transform:scale(1.02) translateY(-1px); }
+        #bulbHalo,#bulbCore{ transition:all 0.35s ease; opacity:0; }
+        #bulbHalo{ filter:drop-shadow(0 0 14px rgba(255,255,255,0.0)) drop-shadow(0 0 26px rgba(255,220,120,0.0)) drop-shadow(0 0 44px rgba(255,200,60,0.0)); }
+        #bulbCore{ filter:drop-shadow(0 0 10px rgba(255,255,255,0.0)) drop-shadow(0 0 18px rgba(255,220,120,0.0)); }
+    </style>
+</head>
+<body>
+<header>
+    <div class="title">🔬 Guided Virtual Lab: EMF &amp; Internal Resistance</div>
+    <div class="subtitle">ออกแบบเพื่อแก้ความเข้าใจผิด: <b>emf ≠ V<sub>terminal</sub> เมื่อมีกระแส</b> • มี Step ล็อกจริง</div>
+</header>
+<div class="wrap">
+    <div class="topbar">
+        <div class="steps">
+            <div class="stepPill active" id="pill1"><span class="badge">1</span> Step 1: Open Circuit</div>
+            <div class="stepPill" id="pill2"><span class="badge">2</span> Step 2: Closed Circuit</div>
+            <div class="stepPill" id="pill3"><span class="badge">3</span> Step 3: Graph Mode</div>
+            <span class="pill" id="stepHint">ทำ Step 1 ให้ผ่านก่อนเพื่อปลดล็อกขั้นถัดไป</span>
+        </div>
+        <div class="actions">
+            <label style="display:flex;gap:8px;align-items:center;font-size:13px;color:#6b665f;white-space:nowrap;">
+                โหมดตรวจ
+                <select id="strictMode" style="padding:8px 10px;border-radius:12px;border:1px solid #f0ddc9;background:#fffaf4;color:#2b2a28;font-family:inherit;font-size:13px;cursor:pointer;">
+                    <option value="learn" selected>🎓 เรียนรู้ (ยืดหยุ่น)</option>
+                    <option value="exam">📝 ประเมิน (เข้มงวด)</option>
+                </select>
+            </label>
+            <button class="ghost" id="btnReset">↺ Reset</button>
+            <button id="btnNext" disabled>ถัดไป →</button>
+        </div>
+    </div>
+    <div class="grid">
+        <div class="panel">
+            <h3>⚙️ เลือกอุปกรณ์ (คลิกเลือก)</h3>
+            <div class="hint">
+                ระบบจะ "ล็อกสิ่งที่ทำได้" ตาม Step เพื่อให้เรียนรู้เป็นลำดับ<br/>
+                <b>Step 1</b>: เลือกแบตเตอรี่ + ตอบคำถามให้ถูก<br/>
+                <b>Step 2</b>: เลือกตัวต้านทาน + ปิดวงจร (สวิตช์ ON)<br/>
+                <b>Step 3</b>: เก็บจุดลงกราฟอัตโนมัติเมื่อทดลองหลายค่า R
+            </div>
+            <div class="controlGroup">
+                <h3 style="margin-top:0">🔋 1) แบตเตอรี่</h3>
+                <div class="cards" id="batteryCards"></div>
+            </div>
+            <div class="controlGroup">
+                <h3 style="margin-top:0">🔌 2) ตัวต้านทานโหลด</h3>
+                <div class="cards" id="resCards"></div>
+                <label>ปรับค่า R (Ω) <span id="R_show" style="color:var(--primary2);font-weight:900"></span></label>
+                <input id="R" type="range" min="1" max="100" step="1" value="10">
+                <div class="hint">หมายเหตุ: ใน Step 1 จะยังปรับ R ไม่ได้</div>
+            </div>
+            <div class="controlGroup">
+                <h3 style="margin-top:0">⚡ 3) ความต้านทานภายใน (r)</h3>
+                <label>ปรับค่า r (Ω) <span id="r_show" style="color:var(--primary2);font-weight:900"></span></label>
+                <input id="r" type="range" min="0" max="5" step="0.1" value="1.0">
+            </div>
+            <div class="controlGroup">
+                <h3 style="margin-top:0">🔀 สวิตช์วงจร</h3>
+                <button id="btnToggle" class="switch-open" style="width:100%" disabled>สวิตช์: OPEN (วงจรเปิด)</button>
+                <div class="hint" style="margin-top:8px">ใน Step 1 จะล็อกไว้เป็นวงจรเปิด (Open Circuit)</div>
+            </div>
+        </div>
+        <div class="lab">
+            <div class="labTop">
+                <div class="panel">
+                    <h3>🧪 พื้นที่ทดลอง (ภาพวงจร)</h3>
+                    <svg class="circuit-svg" viewBox="0 0 900 330" aria-label="Circuit">
+                        <path d="M140 170 H310" stroke="#d4b896" stroke-width="8" stroke-linecap="round"/>
+                        <path d="M590 170 H770" stroke="#d4b896" stroke-width="8" stroke-linecap="round"/>
+                        <path d="M770 170 V260 H140 V170" stroke="#d4b896" stroke-width="8" stroke-linecap="round" fill="none"/>
+                        <defs>
+                            <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+                                <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="rgba(43,42,40,.14)" flood-opacity="1"/>
+                            </filter>
+                        </defs>
+                        <!-- Battery (Real-ish) -->
+                        <g id="batteryDevice" filter="url(#softShadow)" transform="translate(52,50) scale(0.95)">
+                          <defs>
+                            <linearGradient id="batBody_main" x1="0" x2="1">
+                              <stop offset="0%"  stop-color="#1f2a44"/>
+                              <stop offset="26%" stop-color="#101a2a"/>
+                              <stop offset="55%" stop-color="#263a5f"/>
+                              <stop offset="100%" stop-color="#0d1422"/>
+                            </linearGradient>
+                            <linearGradient id="batEdge_main" x1="0" x2="0" y1="0" y2="1">
+                              <stop offset="0%" stop-color="rgba(255,255,255,.35)"/>
+                              <stop offset="35%" stop-color="rgba(255,255,255,.10)"/>
+                              <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+                            </linearGradient>
+                            <linearGradient id="capMetal_main" x1="0" x2="1">
+                              <stop offset="0%"  stop-color="#aab4c1"/>
+                              <stop offset="25%" stop-color="#f1f5f9"/>
+                              <stop offset="60%" stop-color="#b7c0cb"/>
+                              <stop offset="100%" stop-color="#8b95a3"/>
+                            </linearGradient>
+                          </defs>
+                          <rect x="0" y="0" width="120" height="170" rx="34" fill="url(#batBody_main)" stroke="rgba(60,60,60,0.22)" stroke-width="2"/>
+                          <path d="M22 10 C12 22, 12 150, 22 162 L44 162 C34 150, 34 22, 44 10 Z" fill="url(#batEdge_main)"/>
+                          <rect x="8" y="-8" width="104" height="34" rx="16" fill="url(#capMetal_main)" stroke="rgba(60,60,60,0.22)"/>
+                          <rect x="40" y="-18" width="40" height="20" rx="9" fill="#e5e7eb" stroke="#cbd5e1"/>
+                          <rect x="12" y="72" width="96" height="58" rx="16" fill="#f59e0b" opacity="0.95" stroke="rgba(60,60,60,0.18)"/>
+                          <path d="M22 78 H98" stroke="rgba(255,255,255,0.45)" stroke-width="5" stroke-linecap="round"/>
+                          <circle cx="98" cy="18" r="12" fill="#10b981" opacity="0.92"/>
+                          <text x="98" y="23" text-anchor="middle" font-size="16" font-weight="900" fill="#ffffff" font-family="Sarabun,system-ui">+</text>
+                          <text x="18" y="104" font-size="16" fill="#1f2937" font-weight="900" font-family="Sarabun,system-ui">E = <tspan id="E_svg">9</tspan> V</text>
+                          <text x="18" y="126" font-size="16" fill="#1f2937" font-weight="900" font-family="Sarabun,system-ui">r = <tspan id="r_svg">1.0</tspan> Ω</text>
+                        </g>
+                        <!-- Load Resistor (Real-ish) -->
+                        <g id="resistorDevice" filter="url(#softShadow)" transform="translate(320,88) scale(1.00)">
+                          <defs>
+                            <linearGradient id="lead_main" x1="0" x2="1">
+                              <stop offset="0%"  stop-color="#98a2b3"/>
+                              <stop offset="50%" stop-color="#e5e7eb"/>
+                              <stop offset="100%" stop-color="#8a94a3"/>
+                            </linearGradient>
+                            <linearGradient id="resBody_main" x1="0" x2="0" y1="0" y2="1">
+                              <stop offset="0%"  stop-color="#ffe7c7"/>
+                              <stop offset="55%" stop-color="#ffd19a"/>
+                              <stop offset="100%" stop-color="#f2b96f"/>
+                            </linearGradient>
+                            <linearGradient id="resCyl_main" x1="0" x2="1">
+                              <stop offset="0%"   stop-color="rgba(0,0,0,0.10)"/>
+                              <stop offset="28%"  stop-color="rgba(255,255,255,0.25)"/>
+                              <stop offset="58%"  stop-color="rgba(0,0,0,0.08)"/>
+                              <stop offset="100%" stop-color="rgba(0,0,0,0.12)"/>
+                            </linearGradient>
+                          </defs>
+                          <path d="M0 46 C42 46, 56 46, 74 46" stroke="url(#lead_main)" stroke-width="7" stroke-linecap="round"/>
+                          <path d="M176 46 C194 46, 208 46, 250 46" stroke="url(#lead_main)" stroke-width="7" stroke-linecap="round"/>
+                          <rect x="74" y="12" width="102" height="68" rx="26" fill="url(#resBody_main)" stroke="rgba(60,60,60,0.22)" stroke-width="2"/>
+                          <rect x="74" y="12" width="102" height="68" rx="26" fill="url(#resCyl_main)" opacity="0.55"/>
+                          <path d="M88 22 C82 34,82 58,88 70" stroke="rgba(255,255,255,0.55)" stroke-width="4" stroke-linecap="round"/>
+                          <rect x="96"  y="14" width="12" height="64" rx="5" fill="#7c3f1d"/>
+                          <rect x="116" y="14" width="12" height="64" rx="5" fill="#111827"/>
+                          <rect x="136" y="14" width="12" height="64" rx="5" fill="#7c3f1d"/>
+                          <rect x="158" y="14" width="10" height="64" rx="5" fill="#d97706" opacity="0.95"/>
+                          <text x="125" y="108" text-anchor="middle" font-size="16" fill="#6b665f" font-weight="900" font-family="Sarabun,system-ui">R = <tspan id="R_svg">10</tspan> Ω</text>
+                        </g>
+                        <g filter="url(#softShadow)">
+                            <rect x="690" y="110" rx="18" ry="18" width="150" height="70" fill="#dcfce7"/>
+                            <text x="715" y="152" font-size="17" fill="#14532d" font-weight="900">Switch</text>
+                            <text x="715" y="173" font-size="13" fill="#166534" id="sw_svg">OPEN</text>
+                        </g>
+                        <!-- Bulb (Real-ish) -->
+                        <g id="bulbDevice" transform="translate(695,120) scale(0.92)">
+                          <defs>
+                            <radialGradient id="glassGrad_main" cx="38%" cy="28%" r="70%">
+                              <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.95"/>
+                              <stop offset="55%"  stop-color="#fff6d8" stop-opacity="0.55"/>
+                              <stop offset="100%" stop-color="#dfe7f3" stop-opacity="0.20"/>
+                            </radialGradient>
+                            <radialGradient id="glowGrad_main" cx="45%" cy="40%" r="70%">
+                              <stop offset="0%"   stop-color="#fff9d7" stop-opacity="1"/>
+                              <stop offset="55%"  stop-color="#ffd36a" stop-opacity="0.75"/>
+                              <stop offset="100%" stop-color="#ffb100" stop-opacity="0.18"/>
+                            </radialGradient>
+                            <linearGradient id="metalGrad_main" x1="0" x2="1">
+                              <stop offset="0%"   stop-color="#9aa2ad"/>
+                              <stop offset="22%"  stop-color="#f1f5f9"/>
+                              <stop offset="55%"  stop-color="#b7c0cb"/>
+                              <stop offset="100%" stop-color="#8b95a3"/>
+                            </linearGradient>
+                          </defs>
+                          <circle id="bulbHalo" cx="78" cy="72" r="62" fill="rgba(255,215,110,0.10)" opacity="0"/>
+                          <path d="M78 8 C50 8, 26 30, 26 62 C26 88, 40 104, 52 118 C62 130, 62 140, 62 150 L94 150 C94 140, 94 130, 104 118 C116 104, 130 88, 130 62 C130 30, 106 8, 78 8Z"
+                                fill="url(#glassGrad_main)" stroke="rgba(60,60,60,0.22)" stroke-width="2"/>
+                          <path d="M78 14 C56 14, 36 32, 36 62 C36 84, 48 98, 58 110 C66 118, 68 132, 68 140 L88 140 C88 132, 90 118, 98 110 C108 98, 120 84, 120 62 C120 32, 100 14, 78 14Z"
+                                fill="url(#glowGrad_main)" opacity="0.30"/>
+                          <path d="M60 86 C66 76, 90 76, 96 86" fill="none" stroke="#6b5a2a" stroke-width="3.2" stroke-linecap="round"/>
+                          <path d="M63 88 C70 80, 86 80, 93 88" fill="none" stroke="#9a7b2c" stroke-width="2.2" stroke-linecap="round" opacity="0.85"/>
+                          <path d="M70 114 L70 96" stroke="#7a6a45" stroke-width="2" stroke-linecap="round"/>
+                          <path d="M86 114 L86 96" stroke="#7a6a45" stroke-width="2" stroke-linecap="round"/>
+                          <rect x="60" y="150" width="36" height="12" rx="6" fill="#efe7da" stroke="rgba(60,60,60,0.18)"/>
+                          <rect x="52" y="162" width="56" height="34" rx="12" fill="url(#metalGrad_main)" stroke="rgba(60,60,60,0.22)"/>
+                          <path d="M58 171 H102" stroke="rgba(255,255,255,0.40)" stroke-width="4" stroke-linecap="round"/>
+                          <path d="M58 178 H102" stroke="rgba(200,200,200,0.55)" stroke-width="3" stroke-linecap="round"/>
+                          <path d="M58 185 H102" stroke="rgba(200,200,200,0.55)" stroke-width="3" stroke-linecap="round"/>
+                          <rect x="68" y="196" width="24" height="8" rx="4" fill="#6b7280" opacity="0.75"/>
+                          <circle id="bulbCore" cx="78" cy="72" r="18" fill="rgba(255,255,255,0.35)" opacity="0"/>
+                          <text x="78" y="222" text-anchor="middle" font-size="14" fill="#78350f" font-weight="700" font-family="Sarabun,system-ui">Bulb</text>
+                        </g>
+                        <path d="M470 270 H300" stroke="#a38566" stroke-width="5" stroke-linecap="round"/>
+                        <path d="M300 270 l14 -9 v18 z" fill="#a38566"/>
+                        <text x="490" y="275" font-size="15" fill="#6b665f" font-weight="700">I →</text>
+                        <text x="230" y="88" font-size="15" fill="#1e40af" font-weight="800">Vt = <tspan id="Vt_svg">9.00</tspan> V</text>
+                        <text x="420" y="88" font-size="15" fill="#92400e" font-weight="800">Ir = <tspan id="Ir_svg">0.00</tspan> V</text>
+                        <text x="600" y="88" font-size="15" fill="#166534" font-weight="800">I = <tspan id="I_svg">0.00</tspan> A</text>
+                    </svg>
+                    <div class="equation" id="eqBox">
+                        สมการ: <span style="color:var(--primary2);font-weight:900">E = V<sub>terminal</sub> + I·r</span>
+                        <span style="margin-left:10px;font-family:'JetBrains Mono',monospace;color:var(--text);" id="eqVals">9.00 = 9.00 + 0.00</span>
+                    </div>
+                    <div class="feedback" id="fb">
+                        <strong>💡 คำแนะนำ:</strong> <span id="fbText">เริ่มจาก Step 1: เลือกแบตเตอรี่ แล้วสังเกตว่าเมื่อวงจร "เปิด" กระแสเป็นศูนย์ และ Vt เท่ากับ emf</span>
+                        <div class="status warn" id="fbStatus">ยังไม่ผ่าน Step 1</div>
+                    </div>
+                    <div class="qbox">
+                        <div class="q" id="qTitle">Step 1 คำถาม: ตอนวงจรเปิด (I = 0) ค่า Vt เท่ากับอะไร?</div>
+                        <input id="qAns" placeholder="โหมดเรียนรู้: 'Vt เท่ากับ emf' / โหมดประเมิน: 'Vt = E'">
+                        <div class="qactions">
+                            <button id="btnCheck" class="primary">✓ ตรวจคำตอบ</button>
+                            <button class="ghost" id="btnHint">💬 ขอคำใบ้</button>
+                        </div>
+                        <div class="status" id="qStatus">ยังไม่ได้ตรวจคำตอบ</div>
+                    </div>
+                </div>
+                <div class="panel">
+                    <h3>📊 ค่าที่วัดได้ (Readouts)</h3>
+                    <div class="readouts">
+                        <div class="meter"><div class="k">กระแส I</div><div class="v"><span id="I_big">0.00</span><span class="u">A</span></div></div>
+                        <div class="meter"><div class="k">แรงดันปลาย V<sub>t</sub></div><div class="v"><span id="Vt_big">9.00</span><span class="u">V</span></div></div>
+                        <div class="meter"><div class="k">แรงดันตกภายใน Ir</div><div class="v"><span id="Ir_big">0.00</span><span class="u">V</span></div></div>
+                    </div>
+                    <div class="equation" style="margin-top:14px">
+                        <div style="font-weight:900;color:var(--text);margin-bottom:6px">เงื่อนไขผ่าน Step</div>
+                        <div class="hint">
+                            Step 1: เลือกแบตเตอรี่ + ตอบถูก 1 ข้อ<br/>
+                            Step 2: เลือกตัวต้านทาน + ปิดวงจร (Closed) 1 ครั้ง<br/>
+                            Step 3: เก็บจุดกราฟอัตโนมัติเมื่อเปลี่ยน R
+                        </div>
+                    </div>
+                    <div class="equation" style="margin-top:14px">
+                        <div style="font-weight:900;color:var(--text);margin-bottom:6px">สถานะปัจจุบัน</div>
+                        <div class="hint" id="stateBox"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel">
+                <h3>📈 กราฟผลการทดลอง (V<sub>t</sub> vs I)</h3>
+                <div class="hint">Step 3 จะปลดล็อกการเก็บจุดลงกราฟอัตโนมัติ และแสดงความชัน (slope) ที่เกี่ยวข้องกับ r</div>
+                <canvas id="graph" width="1100" height="320"></canvas>
+                <div class="equation" id="graphNote">ตอนนี้ยังอยู่ Step <span id="stepNo">1</span> (กราฟจะเริ่มเก็บจุดเมื่อเข้าสู่ Step 3)</div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+const state={step:1,E:9,r:1.0,R:10,circuitClosed:false,selectedBattery:null,selectedRes:null,step1Answered:false,step2ClosedOnce:false,points:[],hintCount:0};
+const batteries=[{label:"1.5V",E:1.5},{label:"3V",E:3.0},{label:"9V",E:9.0},{label:"12V",E:12.0}];
+const resistors=[{label:"ไม่มีโหลด",R:1},{label:"10 Ω",R:10},{label:"100 Ω",R:100},{label:"กำหนดเอง",R:null}];
+const el=id=>document.getElementById(id);
+
+function buildCards(){
+    const bWrap=el("batteryCards"); bWrap.innerHTML="";
+    batteries.forEach((b,i)=>{const d=document.createElement("div");d.className="card";d.innerHTML=`<div class="row"><div class="cardTitle">🔋 ${b.label}</div><div class="mini">E=${b.E}V</div></div><div class="mini">คลิกเพื่อเลือก</div>`;d.onclick=()=>selectBattery(i);bWrap.appendChild(d);});
+    const rWrap=el("resCards"); rWrap.innerHTML="";
+    resistors.forEach((r,i)=>{const d=document.createElement("div");d.className="card";d.innerHTML=`<div class="row"><div class="cardTitle">${r.label}</div><div class="mini">${r.R===null?"ปรับค่า R ได้":"R="+r.R+"Ω"}</div></div><div class="mini">Step 2 ต้องเลือก</div>`;d.onclick=()=>selectRes(i);rWrap.appendChild(d);});
+}
+
+function markSelectedCards(){
+    [...el("batteryCards").children].forEach((c,i)=>c.classList.toggle("selected",!!state.selectedBattery&&batteries[i].E===state.selectedBattery.E));
+    [...el("resCards").children].forEach((c,i)=>{const r=resistors[i];const sel=state.selectedRes&&((r.R!==null&&state.selectedRes.R===r.R)||(r.R===null&&state.selectedRes.custom===true));c.classList.toggle("selected",!!sel);});
+}
+
+function canGoNext(){
+    if(state.step===1)return !!state.selectedBattery&&state.step1Answered;
+    if(state.step===2)return !!state.selectedRes&&state.step2ClosedOnce;
+    return false;
+}
+
+function gotoNext(){
+    if(!canGoNext())return;
+    if(state.step===1){state.step=2;setGuidanceForStep();}
+    else if(state.step===2){state.step=3;state.points=[];setGuidanceForStep();}
+    renderAll();
+}
+
+function setGuidanceForStep(){
+    const g={
+        1:{fb:"เริ่มจาก Step 1: เลือกแบตเตอรี่ แล้วสังเกตว่าเมื่อวงจร \"เปิด\" กระแสเป็นศูนย์ และ Vt เท่ากับ emf",fbs:"warn",fbsText:"ยังไม่ผ่าน Step 1",q:"Step 1 คำถาม: ตอนวงจรเปิด (I = 0) ค่า Vt เท่ากับอะไร?",hint:"ทำ Step 1 ให้ผ่านก่อนเพื่อปลดล็อก Step 2"},
+        2:{fb:"Step 2: เลือกตัวต้านทาน แล้ว \"ปิดวงจร\" สังเกตว่า Vt น้อยกว่า emf เพราะมีแรงดันตกคร่อมภายใน (Ir)",fbs:"warn",fbsText:"ยังไม่ผ่าน Step 2 — กดสวิตช์ให้วงจรปิด (Closed) ก่อน",q:"Step 2 คำถาม: เมื่อปิดวงจรแล้ว ทำไม Vt จึงน้อยกว่า emf?",hint:"เลือกตัวต้านทาน + ปิดวงจร 1 ครั้ง เพื่อปลดล็อก Step 3"},
+        3:{fb:"Step 3: ทดลองหลายค่า R เพื่อเก็บจุดลงกราฟ V–I อัตโนมัติ แล้วสังเกตความชัน (slope) ที่เกี่ยวข้องกับ r",fbs:"good",fbsText:"เข้าสู่ Step 3 แล้ว 🎉",q:"Step 3 คำถาม: ความชันของกราฟ V–I เกี่ยวข้องกับอะไร?",hint:"ลองเปลี่ยน R หลายค่า ระบบจะเก็บจุดให้เอง"}
+    }[state.step];
+    el("fbText").innerText=g.fb; el("fbStatus").className=`status ${g.fbs}`; el("fbStatus").innerText=g.fbsText;
+    el("qTitle").innerText=g.q; el("qAns").value=""; el("qStatus").className="status"; el("qStatus").innerText="ยังไม่ได้ตรวจคำตอบ"; el("stepHint").innerText=g.hint;
+}
+
+function selectBattery(i){state.selectedBattery=batteries[i];state.E=batteries[i].E;renderAll();}
+function selectRes(i){const r=resistors[i];state.selectedRes=r.R===null?{custom:true}:{R:r.R};if(r.R!==null){state.R=r.R;el("R").value=r.R;}renderAll();}
+
+function compute(){
+    let closed=state.step===1?false:state.circuitClosed;
+    const E=state.E,r=state.r,R=Math.max(1e-6,state.R);
+    let I=0,Vt=E,Ir=0;
+    if(closed){I=E/(R+r);Vt=I*R;Ir=I*r;}
+    return{E,r,R,closed,I,Vt,Ir};
+}
+
+function addPointIfNeeded(I,Vt){
+    if(state.step!==3)return;
+    const last=state.points[state.points.length-1];
+    if(last&&Math.abs(last.I-I)<1e-4&&Math.abs(last.Vt-Vt)<1e-4)return;
+    state.points.push({I,Vt});
+    if(state.points.length>20)state.points.shift();
+}
+
+function drawGraph(){
+    const c=el("graph"),ctx=c.getContext("2d"),W=c.width,H=c.height;
+    ctx.clearRect(0,0,W,H); ctx.fillStyle="#fff"; ctx.fillRect(0,0,W,H);
+    const pL=70,pB=55,pT=20,pR=20,x0=pL,y0=H-pB,x1=W-pR,y1=pT;
+    ctx.strokeStyle="#f0ddc9"; ctx.lineWidth=1;
+    for(let i=1;i<=5;i++){const y=y0-((y0-y1)/5)*i;ctx.beginPath();ctx.moveTo(x0,y);ctx.lineTo(x1,y);ctx.stroke();}
+    for(let i=1;i<=6;i++){const x=x0+((x1-x0)/6)*i;ctx.beginPath();ctx.moveTo(x,y1);ctx.lineTo(x,y0);ctx.stroke();}
+    ctx.strokeStyle="#d4b896"; ctx.lineWidth=2; ctx.beginPath();ctx.moveTo(x0,y1);ctx.lineTo(x0,y0);ctx.lineTo(x1,y0);ctx.stroke();
+    ctx.fillStyle="#6b665f"; ctx.font="15px system-ui"; ctx.fillText("Vt (V)",8,y1+12); ctx.fillText("I (A)",x1-40,H-18);
+    if(state.step!==3){ctx.fillStyle="#c4a882";ctx.font="16px system-ui";ctx.textAlign="center";ctx.fillText("กราฟจะเริ่มเก็บจุดเมื่อเข้าสู่ Step 3",(x0+x1)/2,(y0+y1)/2);ctx.textAlign="left";return;}
+    const{E,r}=compute();
+    const Imax=Math.max(0.5,E/Math.max(0.5,r+1)),Vmax=Math.max(1,E);
+    const sx=(x1-x0)/(Imax*1.05),sy=(y0-y1)/(Vmax*1.1);
+    ctx.strokeStyle="#fb923c"; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.beginPath();
+    for(let k=0;k<=40;k++){const I=(Imax*1.05)*(k/40);const V=Math.max(0,E-r*I);const x=x0+I*sx,y=y0-V*sy;k===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+    ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle="#fb923c"; ctx.font="13px 'JetBrains Mono',monospace"; ctx.fillText(`slope = −r = −${r.toFixed(1)}`,x0+10,y1+18);
+    ctx.fillStyle="#f59e0b"; ctx.shadowColor="rgba(245,158,11,.4)"; ctx.shadowBlur=10;
+    state.points.forEach(p=>{ctx.beginPath();ctx.arc(x0+p.I*sx,y0-p.Vt*sy,6,0,Math.PI*2);ctx.fill();});
+    ctx.shadowBlur=0; ctx.fillStyle="#a38566"; ctx.font="11px 'JetBrains Mono',monospace";
+    for(let i=0;i<=5;i++){const v=(Vmax*1.1/5)*i;ctx.fillText(v.toFixed(1),4,y0-v*sy+4);}
+}
+
+function updateStepPills(){
+    ["pill1","pill2","pill3"].forEach(id=>el(id).classList.remove("active","done"));
+    if(state.step===1)el("pill1").classList.add("active");
+    if(state.step===2){el("pill1").classList.add("done");el("pill2").classList.add("active");}
+    if(state.step===3){el("pill1").classList.add("done");el("pill2").classList.add("done");el("pill3").classList.add("active");}
+}
+
+function setSwitchText(){
+    const closed=state.step===1?false:state.circuitClosed;
+    el("btnToggle").innerText=closed?"สวิตช์: CLOSED (วงจรปิด)":"สวิตช์: OPEN (วงจรเปิด)";
+    el("btnToggle").className=closed?"switch-closed":"switch-open";
+    el("sw_svg").textContent=closed?"CLOSED":"OPEN";
+}
+
+function updateCircuitVisual({E,r,R,closed,I,Vt,Ir}){
+    el("E_svg").textContent=E.toFixed(1).replace(".0",""); el("r_svg").textContent=r.toFixed(1); el("R_svg").textContent=Math.round(R);
+    el("I_svg").textContent=I.toFixed(2); el("Vt_svg").textContent=Vt.toFixed(2); el("Ir_svg").textContent=Ir.toFixed(2);
+    el("I_big").textContent=I.toFixed(2); el("Vt_big").textContent=Vt.toFixed(2); el("Ir_big").textContent=Ir.toFixed(2);
+    el("eqVals").textContent=`${E.toFixed(2)} = ${Vt.toFixed(2)} + ${Ir.toFixed(2)}`;
+    updateBulbBrightness(I,R);
+}
+
+function updateStateBox(){
+    const s=[`Step: ${state.step}`,`โหมดตรวจ: ${getMode()==="exam"?"📝 ประเมิน":"🎓 เรียนรู้"}`,`แบตเตอรี่: ${state.selectedBattery?state.selectedBattery.label:"ยังไม่เลือก"}`,`ตัวต้านทาน: ${state.selectedRes?(state.selectedRes.custom?"กำหนดเอง":state.R+"Ω"):"ยังไม่เลือก"}`,`วงจร: ${state.step===1?"OPEN (ล็อก)":(state.circuitClosed?"CLOSED":"OPEN")}`,`ผ่าน Step 1: ${state.step1Answered?"✅":"❌"}`,`ผ่าน Step 2: ${state.step2ClosedOnce?"✅":"❌"}`,`จุดกราฟ: ${state.points.length}`];
+    el("stateBox").innerHTML=s.map(x=>`• ${x}`).join("<br/>");
+}
+
+function updateBulbBrightness(I,R){
+    const halo=document.getElementById("bulbHalo"),core=document.getElementById("bulbCore");
+    if(!halo||!core)return;
+    const P=I*I*R; let t=Math.min(P*55,1);
+    const coreOpacity=0.15+t*0.95,coreWhite=240+Math.round(t*15),coreWarm=210+Math.round(t*25);
+    core.style.opacity=coreOpacity; core.setAttribute("fill",`rgba(255,${coreWarm},${coreWhite},${0.35+t*0.55})`);
+    core.style.filter=`drop-shadow(0 0 ${10+t*18}px rgba(255,255,255,${0.25+t*0.55})) drop-shadow(0 0 ${18+t*26}px rgba(255,220,120,${0.12+t*0.35}))`;
+    halo.style.opacity=t*0.95; halo.setAttribute("fill",`rgba(255,235,160,${0.05+t*0.22})`);
+    halo.style.filter=`drop-shadow(0 0 ${14+t*22}px rgba(255,255,255,${0.10+t*0.35})) drop-shadow(0 0 ${26+t*36}px rgba(255,220,120,${0.10+t*0.35})) drop-shadow(0 0 ${44+t*54}px rgba(255,200,60,${0.06+t*0.28}))`;
+}
+
+function renderAll(){
+    markSelectedCards(); updateStepPills();
+    el("btnNext").disabled=!canGoNext(); el("btnToggle").disabled=(state.step===1);
+    el("R").disabled=!(state.step>=2&&state.selectedRes&&state.selectedRes.custom===true);
+    el("R_show").innerText=`= ${state.R}`; el("r_show").innerText=`= ${state.r.toFixed(1)}`; el("stepNo").innerText=state.step;
+    el("graphNote").innerHTML=state.step===3?"Step 3 เปิดแล้ว: เปลี่ยนค่า R หลายค่าเพื่อเก็บจุด แล้วสังเกตความชัน":`ตอนนี้ยังอยู่ Step <span id="stepNo">${state.step}</span> (กราฟจะเริ่มเก็บจุดเมื่อเข้าสู่ Step 3)`;
+    setSwitchText(); const res=compute(); updateCircuitVisual(res);
+    if(state.step===2&&res.closed){el("fbText").innerText="สังเกตตอนวงจรปิด: I ≠ 0 ทำให้มี Ir จึงได้ว่า Vt < E";if(res.I>0&&Math.abs(res.Vt-res.E)>0.01){el("fbStatus").className="status good";el("fbStatus").innerText="✅ ดีมาก: เห็นแล้วว่า Vt ไม่เท่ากับ E";}}
+    if(state.step===1){el("fbStatus").className=state.step1Answered?"status good":"status warn";el("fbStatus").innerText=state.step1Answered?"✅ ผ่าน Step 1 แล้ว":"ยังไม่ผ่าน Step 1";}
+    if(state.step===2&&!state.step2ClosedOnce){el("fbStatus").className="status warn";el("fbStatus").innerText="ยังไม่ผ่าน Step 2";}
+    if(state.step===3){el("fbStatus").className="status good";el("fbStatus").innerText="กำลังเก็บจุดกราฟ 📈";}
+    addPointIfNeeded(res.I,res.Vt); drawGraph(); updateStateBox();
+}
+
+/* ===========================
+   ✅ Answer Checking System
+   =========================== */
+function getMode(){return document.getElementById("strictMode")?.value||"learn";}
+
+function normalizeThaiMath(s){
+    return (s||"")
+        .toLowerCase()
+        .replace(/\s+/g,"")
+        .replace(/["""']/g,"")
+        .replace(/[=＝≈≒≡]/g,"=")
+        .replace(/[()]/g,"")
+        .replace(/เท่ากับ|เท่ากัน|คือ/g,"=")
+        .replace(/vₜ|vᵗ|vᵀ/g,"vt")
+        .replace(/v_t/g,"vt")
+        .replace(/vterm|vterminal|v-term|vout/g,"vt")
+        .replace(/v·t|v\.t/g,"vt")
+        .replace(/v\s*t/g,"vt")
+        .replace(/emf|แรงเคลื่อนไฟฟ้า|แรงเคลื่อนไฟฟ้าe/g,"e")
+        .replace(/โวลต์|volt|v/g,"")
+        // ✅ คำไทยเพิ่มเติม
+        .replace(/แรงดันตกคร่อม|แรงดันตก|ตกคร่อม|ตกภายใน|เสียแรงดัน|แรงดันหาย/g,"drop")
+        .replace(/ความต้านทานภายใน|ต้านทานภายใน/g,"r")
+        .replace(/กระแสไหล|มีกระแส|มีกระแสไหล|ไหลของกระแส/g,"i")
+        .replace(/น้อยกว่า|ต่ำกว่า|ลดลง/g,"<");
+}
+
+function checkStep1Answer(raw){
+    const mode=getMode(),a=normalizeThaiMath(raw);
+    const eq1=a.includes("vt=e"),eq2=a.includes("e=vt");
+    if(mode==="exam")return eq1||eq2;
+    return a.includes("vt")&&a.includes("e");
+}
+
+function checkStep2Answer(raw){
+    const mode=getMode(),a=normalizeThaiMath(raw);
+    const hasR      = a.includes("r");
+    const hasI      = a.includes("i")||a.includes("i≠0");
+    const hasIr     = a.includes("ir")||(hasR&&hasI);
+    const hasDrop   = a.includes("drop");
+    const hasVtLess = a.includes("vt<e")||a.includes("vt=e-ir")||a.includes("<");
+    if(mode==="learn"){
+        return hasR||hasIr||hasDrop||hasVtLess||a.includes("มีกระแส");
+    }
+    const causeOK  = hasR||hasIr||hasDrop;
+    const effectOK = hasVtLess||(a.includes("vt")&&a.includes("e")&&a.includes("<"));
+    const evidenceCount=(hasR?1:0)+(hasI?1:0)+(hasDrop?1:0)+(hasVtLess?1:0)+(a.includes("ir")?1:0);
+    return causeOK&&effectOK&&evidenceCount>=2;
+}
+
+function checkStep3Answer(raw){
+    const mode=getMode(),a=normalizeThaiMath(raw);
+    const hasR=a.includes("r")||a.includes("ความต้านทานภายใน");
+    const hasSlope=a.includes("slope")||a.includes("ความชัน")||a.includes("ชัน");
+    if(mode==="exam")return hasR&&hasSlope;
+    return hasR||hasSlope;
+}
+
+function checkAnswer(){
+    const raw=el("qAns").value,mode=getMode(),modeLabel=mode==="exam"?"[ประเมิน]":"[เรียนรู้]";
+    if(state.step===1){
+        const ok=checkStep1Answer(raw);
+        if(ok&&state.selectedBattery){state.step1Answered=true;el("qStatus").className="status good";el("qStatus").innerText=`✅ ${modeLabel} ถูกต้อง! ตอนวงจรเปิด (I=0) → Vt = E`;}
+        else if(!state.selectedBattery){el("qStatus").className="status bad";el("qStatus").innerText="❌ ยังไม่ได้เลือกแบตเตอรี่";}
+        else{el("qStatus").className="status bad";el("qStatus").innerText=mode==="exam"?`❌ ${modeLabel} แนะนำให้ตอบเป็นสมการ เช่น "Vt = E" หรือ "E = Vt"`:`❌ ${modeLabel} ใบ้: ตอนนี้ I=0 ดังนั้น Vt เท่ากับ emf (E)`;}
+    }
+    if(state.step===2){
+        const ok=checkStep2Answer(raw);
+        el("qStatus").className=ok?"status good":"status bad";
+        el("qStatus").innerText=ok?`✅ ${modeLabel} ดีมาก! เมื่อมีกระแสไหล จะเกิดแรงดันตกภายใน (Ir) จึงทำให้ Vt < E`:mode==="exam"?`❌ ${modeLabel} ต้องกล่าวถึง "แรงดันตกภายใน (Ir)" หรือ "r ทำให้แรงดันตก" ให้ชัดเจน`:`❌ ${modeLabel} ใบ้: ตอนปิดวงจรมี "กระแสไหล" ผ่าน "ความต้านทานภายใน r" ทำให้แรงดันตก`;
+    }
+    if(state.step===3){
+        const ok=checkStep3Answer(raw);
+        el("qStatus").className=ok?"status good":"status bad";
+        el("qStatus").innerText=ok?`✅ ${modeLabel} ถูกต้อง! ความชันของกราฟสัมพันธ์กับ r`:mode==="exam"?`❌ ${modeLabel} ต้องระบุทั้ง "slope" และ "r" ในคำตอบ`:`❌ ${modeLabel} ใบ้: slope ของกราฟ V–I เกี่ยวกับ r`;
+    }
+    renderAll();
+}
+
+function showHint(){
+    state.hintCount++; el("qStatus").className="status warn";
+    const mode=getMode();
+    const hints={
+        learn:["💡 คำใบ้: ตอนวงจรเปิด I=0 → ไม่มี Ir → Vt = E","💡 คำใบ้: ตอนปิดวงจรมี I>0 → เกิด Ir=I×r → Vt < E","💡 คำใบ้: slope ของกราฟ V–I ประมาณ −r"],
+        exam:["💡 คำใบ้ (เข้มงวด): ตอบเป็นสมการ เช่น 'Vt = E' หรือ 'E = Vt'","💡 คำใบ้ (เข้มงวด): ต้องระบุ Ir/แรงดันตกคร่อมภายในให้ชัด","💡 คำใบ้ (เข้มงวด): ต้องมีทั้ง slope และ r"]
+    };
+    el("qStatus").innerText=(hints[mode]||hints.learn)[state.step-1]||hints.learn[2];
+}
+
+el("r").addEventListener("input",()=>{state.r=parseFloat(el("r").value);renderAll();});
+el("R").addEventListener("input",()=>{state.R=parseFloat(el("R").value);renderAll();});
+el("btnToggle").addEventListener("click",()=>{if(state.step===1)return;state.circuitClosed=!state.circuitClosed;if(state.step===2&&state.circuitClosed)state.step2ClosedOnce=true;renderAll();});
+el("btnNext").addEventListener("click",gotoNext);
+el("btnCheck").addEventListener("click",checkAnswer);
+el("btnHint").addEventListener("click",showHint);
+el("btnReset").addEventListener("click",()=>{Object.assign(state,{step:1,E:9,r:1.0,R:10,circuitClosed:false,selectedBattery:null,selectedRes:null,step1Answered:false,step2ClosedOnce:false,points:[],hintCount:0});el("r").value="1.0";el("R").value="10";setGuidanceForStep();renderAll();});
+
+buildCards();
+setGuidanceForStep();
+renderAll();
+</script>
+</body>
+</html>
